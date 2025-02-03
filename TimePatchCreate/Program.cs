@@ -39,15 +39,24 @@ namespace TimePatchCreate
 
             // Create patch
             await CreatePatch(gamePath, patchPath, outputPath);
+
+            if (args.Length < 3)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Press any key to close this application.");
+                Console.ReadKey();
+            }
         }
 
         static void GetPathArguments(string[] args, out string gamePath, out string patchPath, out string outputPath)
         {
             // Get cia or 3ds game path
-            Console.WriteLine("Enter the path to the .3ds or .cia of Time Travelers:");
+            Console.WriteLine("Enter the file path to Time Travelers (.3ds or .cia):");
             Console.Write("> ");
 
             gamePath = args.Length > 0 ? args[0] : Console.ReadLine();
+            gamePath = gamePath?.Trim('"').Trim() ?? string.Empty;
+
             if (args.Length > 0)
                 Console.WriteLine(args[0]);
             Console.WriteLine();
@@ -57,6 +66,8 @@ namespace TimePatchCreate
             Console.Write("> ");
 
             patchPath = args.Length > 1 ? args[1] : Console.ReadLine();
+            patchPath = patchPath?.Trim('"').Trim() ?? string.Empty;
+
             if (args.Length > 1)
                 Console.WriteLine(args[1]);
             Console.WriteLine();
@@ -66,6 +77,8 @@ namespace TimePatchCreate
             Console.Write("> ");
 
             outputPath = args.Length > 2 ? args[2] : Console.ReadLine();
+            outputPath = outputPath?.Trim('"').Trim() ?? string.Empty;
+
             if (args.Length > 2)
                 Console.WriteLine(args[2]);
             Console.WriteLine();
@@ -74,6 +87,8 @@ namespace TimePatchCreate
         static async Task CreatePatch(string gamePath, string patchPath, string outputPath)
         {
             // Try to open game
+            Console.Write("Opening game... ");
+
             var partitions = await LoadGamePartitions(gamePath);
             if (partitions == null)
                 return;
@@ -104,8 +119,10 @@ namespace TimePatchCreate
             if (!TryLoadCpkFiles(cpkArchiveFileStream, gamePath, out IList<IArchiveFileInfo> cpkFiles))
                 return;
 
+            Console.WriteLine("Done");
+
             // Create VCDiff's
-            Console.Write("Create VCDiff patches...");
+            Console.Write("Create VCDiff patches... ");
 
             var patchFile = PatchFile.Create(outputPath);
             string cpkFilePath = Path.Combine(patchPath, "tt1_ctr");
@@ -174,7 +191,7 @@ namespace TimePatchCreate
 
             // Save patch file
             patchFile.Persist();
-            Console.WriteLine(" Done");
+            Console.WriteLine("Done");
         }
 
         #region Cpk Data
@@ -241,6 +258,9 @@ namespace TimePatchCreate
             catch (Exception)
             {
                 Console.WriteLine($"The file \"{gamePath}\" can not be opened. Is it open in another program?");
+                Console.WriteLine();
+                Console.WriteLine("Make sure you use a decrypted .3ds or .cia!");
+
                 return null;
             }
 
@@ -293,9 +313,10 @@ namespace TimePatchCreate
             catch (Exception e)
             {
                 Console.WriteLine($"Could not load file \"{fileStream.Name}\". Error: {e.Message}");
+                Console.WriteLine();
                 Console.WriteLine("Possible reasons could be that the file is not a .3ds or .cia, or is not decrypted.");
 
-                throw e;
+                return false;
             }
         }
 
